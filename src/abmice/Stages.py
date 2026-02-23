@@ -10,7 +10,7 @@ We define a class - Corridor - and the collector class.
 import numpy as np
 from string import *
 from sys import version_info
-import os
+import io
 import pickle
 
 class Stage:
@@ -58,6 +58,23 @@ class Stage_collection:
 		f = open(fname, 'wb')
 		pickle.dump(self, f)
 		f.close()
+
+	@staticmethod
+	def from_json(file: io.TextIOWrapper) -> 'StageCollection':
+		stage_collection = Stage_collection(image_path=file['image_path'], experiment_name=file['name'])
+		for stage in file['stages']:
+			stage_collection.add_stage(
+				level=stage['level'],
+				stage=stage['stage'],
+				corridors=stage['corridors'],
+				next_stage=stage['next_stage'],
+				rule=stage['rule'],
+				condition=stage['condition'],
+				name=stage['name'],
+				substages=stage['substages'],
+				random=stage['random'],
+			)
+		return stage_collection
 
 ###########################################################################
 # Stages for Rita

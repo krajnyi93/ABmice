@@ -8,9 +8,7 @@ We define a class - Corridor - and the collector class.
 """
 
 import numpy as np
-from string import *
-from sys import version_info
-import os
+import io
 import pickle
 
 class Corridor:
@@ -61,13 +59,15 @@ class Corridor_list:
 	'class for storing corridor properties'
 	def __init__(self, image_path, experiment_name):
 		self.image_path = image_path
-		self.num_VRs = 0
 		self.name = experiment_name
 		self.corridors = []
 
+	@property
+	def num_VRs(self):
+		return len(self.corridors)
+
 	def add_corridor(self, name, left_image, right_image, end_image, floor_image, ceiling_image, reward_zone_starts, zone_width=470, reward='Right', length=7168, height=768, width=1024):
 		self.corridors.append(Corridor(name, left_image, right_image, end_image, floor_image, ceiling_image, reward_zone_starts, zone_width, reward, length, height, width))
-		self.num_VRs = self.num_VRs + 1
 
 	def print_images(self):
 		for i in range(self.num_VRs):
@@ -82,6 +82,25 @@ class Corridor_list:
 		f = open(fname, 'wb')
 		pickle.dump(self, f)
 		f.close()
+
+	@staticmethod
+	def from_json(file: io.TextIOWrapper) -> 'Corridor_list':
+		stage_collection = Corridor_list(image_path=file['image_path'], experiment_name=file['name'])
+		for stage in file['corridors']:
+			stage_collection.add_corridor(
+				name=stage['name'],
+				left_image=stage['left_image'],
+				right_image=stage['right_image'],
+				end_image=stage['end_image'],
+				floor_image=stage['floor_image'],
+				ceiling_image=stage['ceiling_image'],
+				reward_zone_starts=stage['reward_zone_starts'],
+				width=stage['width'],
+				length=stage['length'],
+				height=stage['height'],
+				reward=stage['reward'],
+			)
+		return stage_collection
 
 # # # cc = Corridor('RN_1_cheese_left.png', 'RN_1_cheese_right.png', 'black_end_wall.png', 'floor_ceiling.png', 'floor_ceiling.png', [5380])
 # # # Cors.add_corridor('RN_1_cheese_left.png', 'RN_1_cheese_right.png', 'black_end_wall.png', 'floor_ceiling.png', 'floor_ceiling.png', [5380])

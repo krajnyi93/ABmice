@@ -17,9 +17,9 @@ from scipy.interpolate import interp1d
 import scipy.stats
 import csv
 
-from utils import *
-from Stages import *
-from Corridors import *
+from abmice.utils import *
+from abmice.Stages import *
+from abmice.Corridors import *
 
 ## a function to break a time series into Nbreak sections each at least Lmin long.
 def breakpoints(Nframes, Lmin=500, Nbreak=5, rngD=None):
@@ -387,7 +387,7 @@ class ImShuffle:
 
             maze_lap = np.unique(maze[y])
             if (len(maze_lap) == 1):
-                corridor = self.all_corridors_raw[int(maze_lap)] # the maze_lap is the index of the available corridors in the given stage
+                corridor = self.all_corridors_raw[maze_lap[0]] # the maze_lap is the index of the available corridors in the given stage
             else:
                 corridor = -1
 
