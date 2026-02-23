@@ -18,6 +18,6 @@ dev = [
 
 
 [[tool.uv.index]]
-name = "abmice"
+name = "ABmice"
 url = "https://github.com/krajnyi93/ABmice/"
 index = "https://github.com/krajnyi93/ABmice/"
