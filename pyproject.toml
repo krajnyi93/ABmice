@@ -21,3 +21,6 @@ dev = [
 name = "ABmice"
 url = "https://github.com/krajnyi93/ABmice/"
 index = "https://github.com/krajnyi93/ABmice/"
+
+[tool.uv.build-backend]
+source-include = ["*.json"]
