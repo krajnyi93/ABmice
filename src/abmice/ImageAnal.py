@@ -61,6 +61,7 @@ class ImagingSessionData:
             reward_zones=None,
             spikes_tag='',
             data_folder='analysed_data',
+            imaging_logfile_path: pathlib.Path = None,
             trigger_voltage_path: pathlib.Path = None,
             action_log_file_path: pathlib.Path = None,
             trigger_log_file_path: pathlib.Path = None,
@@ -89,6 +90,7 @@ class ImagingSessionData:
         self.substage_change_time = [0]
         self.data_folder = data_folder
 
+        self.imaging_logfile_path: pathlib.Path | None = imaging_logfile_path
         self.trigger_voltage_path: pathlib.Path | None = trigger_voltage_path
         self.action_log_file_path: pathlib.Path | None = action_log_file_path
         self.trigger_log_file_path: pathlib.Path | None  = trigger_log_file_path
@@ -241,7 +243,7 @@ class ImagingSessionData:
         if not elfiz:
             frame_time_lap_maze_pos = np.array((self.frame_times, self.frame_laps, self.frame_maze, self.frame_pos))
             time_lap_maze_pos_FILE = self.suite2p_folder + 'frame_time_lap_maze_pos.npy'
-            np.save(time_lap_maze_pos_FILE, frame_time_lap_maze_pos)
+            ## np.save(time_lap_maze_pos_FILE, frame_time_lap_maze_pos)
 
         ## in certain tasks, the same corridor may appear multiple times in different substages
         ## we need to keep this corridor in the list self.corridors for running self.get_lapdata()
@@ -426,7 +428,7 @@ class ImagingSessionData:
         # function that reads the action_log_file and finds the current stage
         # minidom is an xml file interpreter for python
         # hope it works for python 3.7...
-        imaging_logfile = minidom.parse(self.imaging_logfile_name)
+        imaging_logfile = minidom.parse(str(self.imaging_logfile_path) or self.imaging_logfile_name)
         voltage_rec = imaging_logfile.getElementsByTagName('VoltageRecording')
         voltage_delay = float(voltage_rec[0].attributes['absoluteTime'].value)
         ## the offset is the time of the first voltage signal in Labview time
