@@ -2237,7 +2237,7 @@ class ImagingSessionData:
         plt.show(block=False)
 
 
-    def plot_session(self, selected_laps=None, average=True, filename=None, only_imaged = False):
+    def plot_session(self, selected_laps=None, average=True, filename=None, only_imaged = False, show=True):
         ## plot the behavioral data during one session. 
             # - speed
             # - lick rate
@@ -2424,11 +2424,14 @@ class ImagingSessionData:
                         else:
                             axs[row,0].set_ylabel('laps')
 
-            if (filename is None):
-                plt.show(block=False)
-            else:
+            if filename:
                 plt.savefig(filename, format='pdf')
                 plt.close()
+
+            if show:
+                plt.show(block=False)
+            else:
+                return fig
 
         else:
             fig = plt.figure(figsize=(8,3))
