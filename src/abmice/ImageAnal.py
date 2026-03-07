@@ -1737,7 +1737,7 @@ class ImagingSessionData:
         plt.show(block=False)
 
 
-    def plot_ratemaps(self, corridor=-1, normalized=False, sorted=False, corridor_sort=-1, cellids=np.array([-1]), vmax=0, ratemaps_array = [], ratemaps_title = [], filename=None):
+    def plot_ratemaps(self, corridor=-1, normalized=False, sorted=False, corridor_sort=-1, cellids=np.array([-1]), vmax=0, ratemaps_array = [], ratemaps_title = [], filename=None, show=True):
         ## plot the average event rate of all cells in a given corridor
         ## corridor: integer or array... (corridor id)
         ##              INTEGER: if you want to plot default ratemaps
@@ -1918,11 +1918,16 @@ class ImagingSessionData:
                 
         fig.suptitle(sort_title)
         fig.tight_layout()
-        if (filename is None):
-            plt.show(block=False)
-        else:
+        if filename:
             plt.savefig(filename, format='pdf')
             plt.close()
+            return
+
+        if show:
+            plt.show(block=False)
+
+        else:
+            return fig
 
         return sort_index
 
