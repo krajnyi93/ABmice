@@ -428,7 +428,7 @@ class ImagingSessionData:
         # function that reads the action_log_file and finds the current stage
         # minidom is an xml file interpreter for python
         # hope it works for python 3.7...
-        imaging_logfile = minidom.parse(str(self.imaging_logfile_path) or self.imaging_logfile_name)
+        imaging_logfile = minidom.parse(str(self.imaging_logfile_path or self.imaging_logfile_name))
         voltage_rec = imaging_logfile.getElementsByTagName('VoltageRecording')
         voltage_delay = float(voltage_rec[0].attributes['absoluteTime'].value)
         ## the offset is the time of the first voltage signal in Labview time
@@ -1643,9 +1643,9 @@ class ImagingSessionData:
             self.ii_tuned_cells = np.transpose(HolmBonfMat(Pmatrix, 0.05))
         if (self.N_corridors > 1):
             if (self.task == 'contingency_learning'):# we have 4 + 1 selectivity and similarity
-                max_col_index = self.N_corridors*3+3+4 
+                max_col_index = self.N_corridors*3+3+4
             else :# we have selectivity and similarity
-                max_col_index = self.N_corridors*3+3                
+                max_col_index = self.N_corridors*3+3
             Pmatrix = np.transpose(self.shuffle_Pvalues[:,1:max_col_index])
             self.ii_tuned_cells = np.transpose(HolmBonfMat(Pmatrix, 0.05))
 
@@ -2256,188 +2256,185 @@ class ImagingSessionData:
         else:
             add_anticipatory_test = False
 
-        if (self.n_laps > 0):
-            corridor_types = np.unique(self.i_corridors[selected_laps])
-            nrow = len(corridor_types)
-            nbins = len(self.ImLaps[0].bincenters)
-            cmap = plt.cm.get_cmap('jet')   
-            rowHeight = 2
-            if (nrow > 4):
-                rowHeight = 1.5
-            # plt.figure(figsize=(5,2*nrow))
+        if (self.n_laps <= 0):
+            raise Exception("No laps")
 
-            if (average):
-                reward_zone_color = 'green'
-                fig, axs = plt.subplots(nrows=nrow, ncols=1, figsize=(8,rowHeight*nrow), squeeze=False)
-            else:
-                reward_zone_color = 'fuchsia'
-                fig, axs = plt.subplots(nrows=nrow, ncols=1, figsize=(8,rowHeight*nrow*3), squeeze=False)
+        corridor_types = np.unique(self.i_corridors[selected_laps])
+        nrow = len(corridor_types)
+        nbins = len(self.ImLaps[0].bincenters)
+        cmap = plt.cm.get_cmap('jet')
+        rowHeight = 2
+        if (nrow > 4):
+            rowHeight = 1.5
+        # plt.figure(figsize=(5,2*nrow))
 
-            speed_color = cmap(30)
-            speed_color_trial = (speed_color[0], speed_color[1], speed_color[2], (0.05))
+        if (average):
+            reward_zone_color = 'green'
+            fig, axs = plt.subplots(nrows=nrow, ncols=1, figsize=(8,rowHeight*nrow), squeeze=False)
+        else:
+            reward_zone_color = 'fuchsia'
+            fig, axs = plt.subplots(nrows=nrow, ncols=1, figsize=(8,rowHeight*nrow*3), squeeze=False)
 
-            lick_color = cmap(200)
-            lick_color_trial = (lick_color[0], lick_color[1], lick_color[2], (0.05))
+        speed_color = cmap(30)
+        speed_color_trial = (speed_color[0], speed_color[1], speed_color[2], (0.05))
 
-            for row in range(nrow): # for each corridor...
-                # ax = plt.subplot(nrow, 1, row+1)
-                ids_all = np.where(self.i_corridors == corridor_types[row])
-                ids = np.intersect1d(ids_all, selected_laps)
+        lick_color = cmap(200)
+        lick_color_trial = (lick_color[0], lick_color[1], lick_color[2], (0.05))
 
-                if (len(ids) > 2):
-                    ########################################
-                    ## speed
-                    avespeed = np.zeros(nbins)
-                    n_lap_bins = np.zeros(nbins) # number of laps in a given bin (data might be NAN for some laps)
-                    n_laps = len(ids)
-                    n_correct = 0
-                    n_valid = 0
-                    maxspeed = 10
+        for row in range(nrow): # for each corridor...
+            # ax = plt.subplot(nrow, 1, row+1)
+            ids_all = np.where(self.i_corridors == corridor_types[row])
+            ids = np.intersect1d(ids_all, selected_laps)
 
-                    speed_matrix = np.zeros((len(ids), nbins))
+            if (len(ids) > 2):
+                ########################################
+                ## speed
+                avespeed = np.zeros(nbins)
+                n_lap_bins = np.zeros(nbins) # number of laps in a given bin (data might be NAN for some laps)
+                n_laps = len(ids)
+                n_correct = 0
+                n_valid = 0
+                maxspeed = 10
 
-                    i_lap = 0
-                    for lap in ids:
-                        if (self.ImLaps[lap].mode == 1): # only use the lap if it was a valid lap
-                            if (average):
-                                axs[row,0].step(self.ImLaps[lap].bincenters, self.ImLaps[lap].ave_speed, where='mid', c=speed_color_trial)
-                            speed_matrix[i_lap,:] =  np.round(self.ImLaps[lap].ave_speed, 2)
-                            nans_lap = np.isnan(self.ImLaps[lap].ave_speed)
-                            avespeed = nan_add(avespeed, self.ImLaps[lap].ave_speed)
-                            n_lap_bins = n_lap_bins +  np.logical_not(nans_lap)
-                            if (max(self.ImLaps[lap].ave_speed) > maxspeed): maxspeed = max(self.ImLaps[lap].ave_speed)
-                            n_correct = n_correct + self.ImLaps[lap].correct
-                            n_valid = n_valid + 1
-                        else:
-                            speed_matrix[i_lap,:] =  np.nan
-                        i_lap = i_lap + 1
-                    maxspeed = min(maxspeed, 60)
-                    P_correct = np.round(float(n_correct) / float(n_valid), 3)
+                speed_matrix = np.zeros((len(ids), nbins))
 
-                    if (average):
-                        avespeed = nan_divide(avespeed, n_lap_bins, n_lap_bins > 0)
-                        axs[row,0].step(self.ImLaps[lap].bincenters, avespeed, where='mid', c=speed_color)
-                        axs[row,0].set_ylim([-1,1.2*maxspeed])
+                i_lap = 0
+                for lap in ids:
+                    if (self.ImLaps[lap].mode == 1): # only use the lap if it was a valid lap
+                        if (average):
+                            axs[row,0].step(self.ImLaps[lap].bincenters, self.ImLaps[lap].ave_speed, where='mid', c=speed_color_trial)
+                        speed_matrix[i_lap,:] =  np.round(self.ImLaps[lap].ave_speed, 2)
+                        nans_lap = np.isnan(self.ImLaps[lap].ave_speed)
+                        avespeed = nan_add(avespeed, self.ImLaps[lap].ave_speed)
+                        n_lap_bins = n_lap_bins +  np.logical_not(nans_lap)
+                        if (max(self.ImLaps[lap].ave_speed) > maxspeed): maxspeed = max(self.ImLaps[lap].ave_speed)
+                        n_correct = n_correct + self.ImLaps[lap].correct
+                        n_valid = n_valid + 1
                     else:
-                        im = axs[row,0].imshow(speed_matrix, cmap='viridis', aspect='auto', vmin=0, vmax=maxspeed, extent=(0, self.corridor_length_roxel, 0, i_lap), origin='lower')
-                        plt.colorbar(im, orientation='vertical',ax=axs[row, 0])
+                        speed_matrix[i_lap,:] =  np.nan
+                    i_lap = i_lap + 1
+                maxspeed = min(maxspeed, 60)
+                P_correct = np.round(float(n_correct) / float(n_valid), 3)
 
-                    if (row == 0):
-                        if (self.sessionID >= 0):
-                            plot_title = 'session:' + str(self.sessionID) + ': ' + str(int(n_laps)) + ' (' + str(int(n_correct)) + ')' + ' laps in corridor ' + str(int(corridor_types[row])) + ', P-correct: ' + str(P_correct)
-                        else:
-                            plot_title = str(int(n_laps)) + ' (' + str(int(n_correct)) + ')' + ' laps in corridor ' + str(int(corridor_types[row])) + ', P-correct: ' + str(P_correct)
+                if (average):
+                    avespeed = nan_divide(avespeed, n_lap_bins, n_lap_bins > 0)
+                    axs[row,0].step(self.ImLaps[lap].bincenters, avespeed, where='mid', c=speed_color)
+                    axs[row,0].set_ylim([-1,1.2*maxspeed])
+                else:
+                    im = axs[row,0].imshow(speed_matrix, cmap='viridis', aspect='auto', vmin=0, vmax=maxspeed, extent=(0, self.corridor_length_roxel, 0, i_lap), origin='lower')
+                    plt.colorbar(im, orientation='vertical',ax=axs[row, 0])
+
+                if (row == 0):
+                    if (self.sessionID >= 0):
+                        plot_title = 'session:' + str(self.sessionID) + ': ' + str(int(n_laps)) + ' (' + str(int(n_correct)) + ')' + ' laps in corridor ' + str(int(corridor_types[row])) + ', P-correct: ' + str(P_correct)
                     else:
                         plot_title = str(int(n_laps)) + ' (' + str(int(n_correct)) + ')' + ' laps in corridor ' + str(int(corridor_types[row])) + ', P-correct: ' + str(P_correct)
+                else:
+                    plot_title = str(int(n_laps)) + ' (' + str(int(n_correct)) + ')' + ' laps in corridor ' + str(int(corridor_types[row])) + ', P-correct: ' + str(P_correct)
 
-                    ########################################
-                    ## reward zones
+                ########################################
+                ## reward zones
 
-                    if (self.ImLaps[lap].zones.shape[1] > 0):
-                        bottom, top = axs[row,0].get_ylim()
-                        left = np.round(self.ImLaps[lap].zones[0,0] * self.corridor_length_roxel, -1) - 4.5 # threshold of the position rounded to 10s - this is what LabView does
-                        right = np.round(self.ImLaps[lap].zones[1,0] * self.corridor_length_roxel, -1) - 4.5
+                if (self.ImLaps[lap].zones.shape[1] > 0):
+                    bottom, top = axs[row,0].get_ylim()
+                    left = np.round(self.ImLaps[lap].zones[0,0] * self.corridor_length_roxel, -1) - 4.5 # threshold of the position rounded to 10s - this is what LabView does
+                    right = np.round(self.ImLaps[lap].zones[1,0] * self.corridor_length_roxel, -1) - 4.5
 
+                    if (average):
+                        polygon = Polygon(np.array([[left, bottom], [left, top], [right, top], [right, bottom]]), closed = True, color=reward_zone_color, alpha=0.15)
+                        axs[row,0].add_patch(polygon)
+                    else :
+                        axs[row,0].vlines((left, right), ymin=bottom, ymax=top, colors=reward_zone_color, lw=3)
+                    n_zones = np.shape(self.ImLaps[lap].zones)[1]
+                    if (n_zones > 1):
+                        for i in range(1, n_zones):
+                            left = np.round(self.ImLaps[lap].zones[0,i] * self.corridor_length_roxel, -1) - 4.5 # threshold of the position rounded to 10s - this is what LabView does
+                            right = np.round(self.ImLaps[lap].zones[1,i] * self.corridor_length_roxel, -1) - 4.5
+                            if (average):
+                                polygon = Polygon(np.array([[left, bottom], [left, top], [right, top], [right, bottom]]), closed = True, color=reward_zone_color, alpha=0.15)
+                                axs[row,0].add_patch(polygon)
+                            else :
+                                axs[row,0].vlines((left, right), ymin=bottom, ymax=top, colors=reward_zone_color, lw=3)
+                    else: # we look for anticipatory licking tests
+                        P_statement = ', anticipatory P value not tested'
+                        for k in range(len(self.anticipatory)):
+                            if (self.anticipatory[k].corridor == corridor_types[row]):
+                                P_statement = ', anticipatory P = ' + str(round(self.anticipatory[k].test[1],5))
+                        if (add_anticipatory_test == True):
+                            plot_title = plot_title + P_statement
+
+                axs[row,0].set_title(plot_title)
+
+                ########################################
+                ## lick
+                if (average):
+                    ax2 = axs[row,0].twinx()
+                n_lap_bins = np.zeros(nbins) # number of laps in a given bin (data might be NAN for some laps)
+                maxrate = 10
+                avelick = np.zeros(nbins)
+
+                lick_matrix = np.zeros((len(ids), nbins))
+                i_lap = 0
+                i_sstage = 0
+                if (len(self.substage_change_laps) > 1): # we have substage switch
+                    # the substage of the first lap:
+                    # which is the largast switch before the fist lap?
+                    i_sstage = max(np.flatnonzero(self.substage_change_laps <= ids[0])) + 1
+
+
+                for lap in ids:
+                    if (self.ImLaps[lap].mode == 1): # only use the lap if it was a valid lap
                         if (average):
-                            polygon = Polygon(np.array([[left, bottom], [left, top], [right, top], [right, bottom]]), closed = True, color=reward_zone_color, alpha=0.15)
-                            axs[row,0].add_patch(polygon)
-                        else :
-                            axs[row,0].vlines((left, right), ymin=bottom, ymax=top, colors=reward_zone_color, lw=3)
-                        n_zones = np.shape(self.ImLaps[lap].zones)[1]
-                        if (n_zones > 1):
-                            for i in range(1, n_zones):
-                                left = np.round(self.ImLaps[lap].zones[0,i] * self.corridor_length_roxel, -1) - 4.5 # threshold of the position rounded to 10s - this is what LabView does
-                                right = np.round(self.ImLaps[lap].zones[1,i] * self.corridor_length_roxel, -1) - 4.5
-                                if (average):
-                                    polygon = Polygon(np.array([[left, bottom], [left, top], [right, top], [right, bottom]]), closed = True, color=reward_zone_color, alpha=0.15)
-                                    axs[row,0].add_patch(polygon)
-                                else :
-                                    axs[row,0].vlines((left, right), ymin=bottom, ymax=top, colors=reward_zone_color, lw=3)
-                        else: # we look for anticipatory licking tests
-                            P_statement = ', anticipatory P value not tested'
-                            for k in range(len(self.anticipatory)):
-                                if (self.anticipatory[k].corridor == corridor_types[row]):
-                                    P_statement = ', anticipatory P = ' + str(round(self.anticipatory[k].test[1],5))
-                            if (add_anticipatory_test == True):
-                                plot_title = plot_title + P_statement
-
-                    axs[row,0].set_title(plot_title)
-
-                    ########################################
-                    ## lick
-                    if (average):
-                        ax2 = axs[row,0].twinx()
-                    n_lap_bins = np.zeros(nbins) # number of laps in a given bin (data might be NAN for some laps)
-                    maxrate = 10
-                    avelick = np.zeros(nbins)
-
-                    lick_matrix = np.zeros((len(ids), nbins))
-                    i_lap = 0
-                    i_sstage = 0
-                    if (len(self.substage_change_laps) > 1): # we have substage switch
-                        # the substage of the first lap: 
-                        # which is the largast switch before the fist lap?
-                        i_sstage = max(np.flatnonzero(self.substage_change_laps <= ids[0])) + 1
-
-
-                    for lap in ids:
-                        if (self.ImLaps[lap].mode == 1): # only use the lap if it was a valid lap
-                            if (average): 
-                                ax2.step(self.ImLaps[lap].bincenters, self.ImLaps[lap].lick_rate, where='mid', c=lick_color_trial, linewidth=1)
-                            else:
-                                if (len(self.ImLaps[lap].reward_times) > 0):
-                                    axs[row,0].plot(self.ImLaps[lap].reward_position, np.ones(len(self.ImLaps[lap].reward_position)) * i_lap + 0.5, 'o', ms=4, color='deepskyblue')
-                                if (len(self.ImLaps[lap].lick_times) > 0):
-                                    axs[row,0].plot(self.ImLaps[lap].lick_position, np.ones(len(self.ImLaps[lap].lick_position)) * i_lap + 0.5, 'oC1', ms=1)
-                                    if (len(self.substage_change_laps) > i_sstage):
-                                        if (lap >= self.substage_change_laps[i_sstage]):
-                                            axs[row,0].hlines(i_lap, xmin=0, xmax=self.corridor_length_roxel, colors='crimson', lw=3)
-                                            i_sstage = i_sstage + 1
-                            lick_matrix[i_lap,:] =  np.round(self.ImLaps[lap].lick_rate, 2)
-                            nans_lap = np.isnan(self.ImLaps[lap].lick_rate)
-                            avelick = nan_add(avelick, self.ImLaps[lap].lick_rate)
-                            n_lap_bins = n_lap_bins +  np.logical_not(nans_lap)
-                            if (np.nanmax(self.ImLaps[lap].lick_rate) > maxrate): maxrate = np.nanmax(self.ImLaps[lap].lick_rate)
-                        i_lap = i_lap + 1
-                    maxrate = min(maxrate, 20)
-
-                    avelick = nan_divide(avelick, n_lap_bins, n_lap_bins > 0)
-                    if (average):
-                        ax2.step(self.ImLaps[lap].bincenters, avelick, where='mid', c=lick_color)
-                        ax2.set_ylim([-1,1.2*maxrate])
-
-
-                    if (row==(nrow-1)):
-                        if (average): 
-                            axs[row,0].set_ylabel('speed (cm/s)', color=speed_color)
-                            axs[row,0].tick_params(axis='y', labelcolor=speed_color)
-                            ax2.set_ylabel('lick rate (lick/s)', color=lick_color)
-                            ax2.tick_params(axis='y', labelcolor=lick_color)
+                            ax2.step(self.ImLaps[lap].bincenters, self.ImLaps[lap].lick_rate, where='mid', c=lick_color_trial, linewidth=1)
                         else:
-                            axs[row,0].set_ylabel('laps')
-                        axs[row,0].set_xlabel('position (roxel)')
+                            if (len(self.ImLaps[lap].reward_times) > 0):
+                                axs[row,0].plot(self.ImLaps[lap].reward_position, np.ones(len(self.ImLaps[lap].reward_position)) * i_lap + 0.5, 'o', ms=4, color='deepskyblue')
+                            if (len(self.ImLaps[lap].lick_times) > 0):
+                                axs[row,0].plot(self.ImLaps[lap].lick_position, np.ones(len(self.ImLaps[lap].lick_position)) * i_lap + 0.5, 'oC1', ms=1)
+                                if (len(self.substage_change_laps) > i_sstage):
+                                    if (lap >= self.substage_change_laps[i_sstage]):
+                                        axs[row,0].hlines(i_lap, xmin=0, xmax=self.corridor_length_roxel, colors='crimson', lw=3)
+                                        i_sstage = i_sstage + 1
+                        lick_matrix[i_lap,:] =  np.round(self.ImLaps[lap].lick_rate, 2)
+                        nans_lap = np.isnan(self.ImLaps[lap].lick_rate)
+                        avelick = nan_add(avelick, self.ImLaps[lap].lick_rate)
+                        n_lap_bins = n_lap_bins +  np.logical_not(nans_lap)
+                        if (np.nanmax(self.ImLaps[lap].lick_rate) > maxrate): maxrate = np.nanmax(self.ImLaps[lap].lick_rate)
+                    i_lap = i_lap + 1
+                maxrate = min(maxrate, 20)
+
+                avelick = nan_divide(avelick, n_lap_bins, n_lap_bins > 0)
+                if (average):
+                    ax2.step(self.ImLaps[lap].bincenters, avelick, where='mid', c=lick_color)
+                    ax2.set_ylim([-1,1.2*maxrate])
+
+
+                if (row==(nrow-1)):
+                    if (average):
+                        axs[row,0].set_ylabel('speed (cm/s)', color=speed_color)
+                        axs[row,0].tick_params(axis='y', labelcolor=speed_color)
+                        ax2.set_ylabel('lick rate (lick/s)', color=lick_color)
+                        ax2.tick_params(axis='y', labelcolor=lick_color)
                     else:
-                        axs[row,0].set_xticklabels([])
-                        if (average): 
-                            axs[row,0].tick_params(axis='y', labelcolor=speed_color)
-                            ax2.tick_params(axis='y', labelcolor=lick_color)
-                        else:
-                            axs[row,0].set_ylabel('laps')
+                        axs[row,0].set_ylabel('laps')
+                    axs[row,0].set_xlabel('position (roxel)')
+                else:
+                    axs[row,0].set_xticklabels([])
+                    if (average):
+                        axs[row,0].tick_params(axis='y', labelcolor=speed_color)
+                        ax2.tick_params(axis='y', labelcolor=lick_color)
+                    else:
+                        axs[row,0].set_ylabel('laps')
 
-            if filename:
-                plt.savefig(filename, format='pdf')
-                plt.close()
+        if filename:
+            plt.savefig(filename, format='pdf')
+            plt.close()
 
-            if show:
-                plt.show(block=False)
-            else:
-                return fig
-
-        else:
-            fig = plt.figure(figsize=(8,3))
-            # plt.scatter([-4, -3, -2], [2,3,4])
-            plt.title('No data to show')
+        if show:
             plt.show(block=False)
+        else:
+            return fig
+
 
     def plot_masks(self, cellids, cell_property=np.array([np.nan]), title_string=''):
         if (version_info.major == 2):
@@ -3063,12 +3060,14 @@ class Lap_ImData:
         self.speed_factor = 106.5 / 3500 ## constant to convert distance from pixel to cm
         self.corridor_length_cm = self.corridor_length_roxel * self.speed_factor # cm
 
+        # property
         self.last_zone_start = max(self.corridor_list.corridors[self.corridor].reward_zone_starts)
         self.last_zone_end = max(self.corridor_list.corridors[self.corridor].reward_zone_ends)
         self.zones = np.vstack([np.array(self.corridor_list.corridors[self.corridor].reward_zone_starts), np.array(self.corridor_list.corridors[self.corridor].reward_zone_ends)])        
         self.n_zones = np.shape(self.zones)[1]
-        self.preZoneRate = [None, None] # only if 1 lick zone; Compare the 210 roxels just before the zone with the preceeding 210 
 
+
+        self.preZoneRate = [None, None] # only if 1 lick zone; Compare the 210 roxels just before the zone with the preceeding 210 
 
         self.frame_period = frame_period
         self.frames_dF_F = lap_frames_dF_F
@@ -3087,7 +3086,7 @@ class Lap_ImData:
         ## lick position and reward position
         ##################################################################################
 
-        F = interp1d(self.raw_time,self.raw_position)
+        F = interp1d(self.raw_time, self.raw_position)
         self.lick_position = F(self.lick_times)
         self.reward_position = F(self.reward_times)
 
@@ -3106,7 +3105,7 @@ class Lap_ImData:
             if ((len(lick_in_zone) == 0) & self.correct):
                 print ('Warning: rewarded lap with no lick in zone! lap number:' + str(self.lap))
 
-        if (next_grey_lap_duration is not None):
+        if next_grey_lap_duration is not None:
             self.grey_threshold = 0.7 # max duration of grey zone after correct
             if (self.correct):
                 if (next_grey_lap_duration > self.grey_threshold):
@@ -3148,7 +3147,7 @@ class Lap_ImData:
 
         ## calculate the speed during the frames
         speed = np.diff(self.frames_pos) * self.speed_factor / self.frame_period # cm / s       
-        speed_first = 2 * speed[0] - speed[1] # linear extrapolation: x1 - (x2 - x1)
+        speed_first = 2 * speed[0] - speed[1] # linear extrapolation:( v1 - (v2 - v1) )
         self.frames_speed = np.hstack([speed_first, speed])
 
         if (verbous > 0):
