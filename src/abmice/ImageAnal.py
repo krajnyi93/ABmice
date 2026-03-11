@@ -2032,7 +2032,7 @@ class ImagingSessionData:
             
             if write_pdf==True:
                 plt.close()
-
+        # todo: another function definition
         if (signal == 'rate'):
             min_intensity=0
             max_intensity=100
@@ -3169,7 +3169,9 @@ class Lap_ImData:
 
         last_bin_number = 0 # each spike is assigned to all position bins since the last imaging frame 
         for i_frame in range(len(self.frames_pos)):
-            next_bin_number = int(self.frames_pos[i_frame] // 70) 
+            next_bin_number = int(self.frames_pos[i_frame] // 70)
+
+            # todo: BUG: self.multiplane here
             if ((next_bin_number > last_bin_number + 1) & self.multiplane):
                 bin_number = np.arange(last_bin_number+1, next_bin_number+1) # the sequence ends at next_bun_number
                 n_bins = len(bin_number)
@@ -3191,6 +3193,7 @@ class Lap_ImData:
         for lpos in self.lick_position:
             lbin_number = int(lpos // 70)
             lbin_counts[lbin_number] += 1
+
         self.N_licks = lbin_counts
         self.lick_rate = nan_divide(self.N_licks, self.T_pos, where=(self.T_pos > 0.025))
         if (verbous > 0):
@@ -3205,7 +3208,8 @@ class Lap_ImData:
 
             last_bin_number = 0 # each spike is assigned to all position bins since the last imaging frame 
             for i_frame in range(len(self.frames_pos)):
-                next_bin_number = int(self.frames_pos[i_frame] // 70) 
+                next_bin_number = int(self.frames_pos[i_frame] // 70)
+                # todo: BUG: multiplane
                 if ((next_bin_number > last_bin_number + 1) & self.multiplane):
                     bin_number = np.arange(last_bin_number+1, next_bin_number+1) # the sequence ends at next_bun_number
                     n_bins = len(bin_number)
