@@ -418,6 +418,7 @@ class ImagingSessionData:
         # function that reads the action_log_file and finds the current stage
         action_log_file_string=datapath + 'data/' + name + '_' + task + '/' + date_time + '/' + date_time + '_' + name + '_' + task + '_UserActionLog.txt'
         action_log_file=open(self.action_log_file_path or action_log_file_string, newline='')
+        # todo: it is not a csv file
         log_file_reader=csv.reader(action_log_file, delimiter=',')
         next(log_file_reader, None)#skip the headers
         for line in log_file_reader:
@@ -1185,7 +1186,7 @@ class ImagingSessionData:
 
         self.cell_corridor_similarity = np.mean(similarity_matrix, axis=0)
 
-    def plot_properties(self, cellids=np.array([-1]), interactive=False):
+    def plot_properties(self, cellids=np.array([-1]), interactive=False, show=True):
         
         fig, ax = plt.subplots(self.N_corridors, 4, figsize=(10,5), sharex='col', sharey='col')
         plt.subplots_adjust(wspace=0.35, hspace=0.2)
@@ -1289,10 +1290,16 @@ class ImagingSessionData:
                                         fig.canvas.draw_idle()
             
             fig.canvas.mpl_connect("motion_notify_event", hover)
-        
-            plt.show(block=False)
-        else :
-            plt.show(block=False)
+
+            if show:
+                plt.show(block=False)
+            else:
+                return fig
+        else:
+            if show:
+                plt.show(block=False)
+            else:
+                return fig
             
     def plot_hist_save_data(self, prop, cellids = np.nan, 
                             N_bins = 30, bins_start = np.nan, bins_end = np.nan,normalised = False,logx_scale=False,logy_scale=False, 
