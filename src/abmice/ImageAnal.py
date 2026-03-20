@@ -307,7 +307,8 @@ class ImagingSessionData:
             return 
         helper_array = np.zeros(self.iscell.shape[0]) 
         new_index = 0 
-        for i in range(self.iscell.shape[0]): 
+        for i in range(self.iscell.shape[0]):
+            # todo: coding error: iscell has type: float which is compared to int
             if self.iscell[i,0]==1: 
                 helper_array[i] = new_index 
                 new_index += 1 
