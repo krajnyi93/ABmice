@@ -296,6 +296,9 @@ class ImagingSessionData:
 
         self.test_anticipatory()
 
+    def get_imaged_laps(self) -> list["Lap_ImData"]:
+        return self.ImLaps
+
     def get_analysis_ID(self, s2p_ids):
         # map suite2p ids to analysis ids - writes results to console and returns them
         s2p_ids = np.array(s2p_ids) 
@@ -524,12 +527,12 @@ class ImagingSessionData:
     def calc_dF_F(self):
         print('calculating dF/F and SNR...')
 
-        self.cell_SDs = np.zeros(self.N_cells) # a vector with the SD of the cells
+        self.cell_SDs = np.zeros(self.N_cells) # a vector with the standard Deviation of the cells
         self.cell_SNR = np.zeros(self.N_cells) # a vector with the signal to noise ratio of the cells (max F / SD)
         self.cell_baselines = np.zeros(self.N_cells) # a vector with the baseline F of the cells
 
         ## to calculate the SD and SNR, we need baseline periods with no spikes for at least 1 sec
-        self.frame_rate = int(np.ceil(1/self.frame_period))
+        self.frame_rate = int(np.ceil(1/self.frame_period))  # todo: ??? int? why ceil?
         sp_threshold = 20 # 
         T_after_spike = 3 #s 
         T_before_spike = 0.5 #s 
@@ -562,6 +565,7 @@ class ImagingSessionData:
             # cells[0] = 4
             # cells[5] = 1064
 
+            # todo: separate to two function
             allspikes_1s = np.hstack([np.repeat(sp_threshold, self.frame_rate-1), np.convolve(self.raw_spks[i_cell,:], filt, mode='valid')])
 
             ### 1.2 no spikes if the sum remains smaller than sp_threshold
@@ -603,7 +607,8 @@ class ImagingSessionData:
             self.cell_baselines[i_cell] = np.mean(bases)
             self.cell_SDs[i_cell] = np.mean(sds)
             self.cell_SNR[i_cell] = max(self.dF_F[i_cell,:]) / np.mean(sds)
-            self.spks[i_cell,:] = self.spks[i_cell,:]# / baseline / self.cell_SDs[i_cell]
+            # todo: unnecessary line below
+            # self.spks[i_cell,:] = self.spks[i_cell,:]# / baseline / self.cell_SDs[i_cell]
 
         print('SNR done')
 
@@ -694,7 +699,7 @@ class ImagingSessionData:
     ## separating data into laps
     ##############################################################
 
-    def get_lapdata(self, datapath, date_time, name, task, selected_laps=None):
+    def get_lapdata(self, datapath: str = None, date_time: datetime | None = None, name: str = None, task: str = None, selected_laps=None):
 
         time_array=[]
         lap_array=[]
@@ -708,6 +713,7 @@ class ImagingSessionData:
         # this could be made much faster by using pandas
         data_log_file_string=datapath + 'data/' + name + '_' + task + '/' + date_time + '/' + date_time + '_' + name + '_' + task + '_ExpStateMashineLog.txt'
         data_log_file=open(self.data_log_file_path or data_log_file_string, newline='')
+        # todo: extension is not CSV
         log_file_reader=csv.reader(data_log_file, delimiter=',')
         next(log_file_reader, None)#skip the headers
         for line in log_file_reader:
@@ -2248,7 +2254,7 @@ class ImagingSessionData:
 
         plt.show(block=False)
 
-
+    # todo: separate into 2 functions
     def plot_session(self, selected_laps=None, average=True, filename=None, only_imaged = False, show=True):
         ## plot the behavioral data during one session. 
             # - speed
@@ -3270,6 +3276,9 @@ class Lap_ImData:
             
             if (verbous > 0):
                 print('Zone-Rates calculated')
+
+    def get_max_velocity(self):
+        return self.frames_speed.max()
 
     def plot_tx(self, fluo=False, th=25):
         ## fluo: True or Fasle, whether fluoresnece data should be plotted.
