@@ -215,6 +215,7 @@ class ImagingSessionData:
             self.neuron_index = np.nonzero(self.iscell[:,0])[0]
             self.F = self.F_all[self.neuron_index,:]
             self.raw_spks = self.spks_all[self.neuron_index,:]
+            # todo: misleading when a variable is initialised with wrong data
             self.dF_F = np.copy(self.F)
             self.spks = np.copy(self.raw_spks) # could be normalized in calc_dF_F: spks / F / SD(F)
             self.N_cells = self.F.shape[0]
@@ -1486,6 +1487,7 @@ class ImagingSessionData:
             self.candidate_PCs.append(candidate_cells)
 
     # def __init__(self, datapath, date_time, name, task, stage, raw_spikes, frame_times, frame_pos, frame_laps, N_shuffle=1000, mode='random'):
+    # todo: dependency injection pattern
     def calc_shuffle(self, cellids, n=1000, mode='shift', batchsize=25, verbous=1, name_string=''):
         ## cellids: numpy array - the index of the cells to be included in the analysis
         ## n: integer, number of shuffles
