@@ -6,7 +6,8 @@ Created on Tue Apr 27 18:14:19 2020
 luko.balazs - lukobalazs@gmail.com
 , 
 """
-
+import json
+import pathlib
 
 import numpy as np
 import math
@@ -37,7 +38,17 @@ def breakpoints(Nframes, Lmin=500, Nbreak=5, rngD=None):
 
 class ImShuffle:
     'Base structure for shuffling analysis of imaging data'
-    def __init__(self, datapath, date_time, name, task, stage, raw_spikes, frame_times, frame_pos, frame_laps, N_shuffle=1000, cellids=np.array([-1]), mode='random', batchsize=None, selected_laps=None, speed_threshold=5, randseed=476, elfiz=False, min_Nlaps=5, multiplane=False):
+    def __init__(self, datapath, date_time, name, task, stage, raw_spikes, frame_times, frame_pos, frame_laps, N_shuffle=1000, cellids=np.array([-1]), mode='random', batchsize=None, selected_laps=None, speed_threshold=5, randseed=476, elfiz=False, min_Nlaps=5, multiplane=False,
+                 parent_dir: pathlib.Path | None = None,
+            imaging_logfile_path: pathlib.Path = None,
+            trigger_voltage_path: pathlib.Path = None,
+            action_log_file_path: pathlib.Path = None,
+            trigger_log_file_path: pathlib.Path = None,
+            F_all_path: pathlib.Path = None,
+            spikes_all_path: pathlib.Path = None,
+            is_cell_path: pathlib.Path = None,
+            data_log_file_path: pathlib.Path = None,
+                 ):
         ###########################################
         ## setting basic parameters for the session
         ###########################################
@@ -56,21 +67,22 @@ class ImShuffle:
         self.elfiz = elfiz
         self.minimum_Nlaps = min_Nlaps
 
-        stagefilename = datapath + self.task + '_stages.pkl'
-        input_file = open(stagefilename, 'rb')
-        if version_info.major == 2:
-            self.stage_list = pickle.load(input_file)
-        elif version_info.major == 3:
-            self.stage_list = pickle.load(input_file, encoding='latin1')
-        input_file.close()
+        self.parent_dir: pathlib.Path = parent_dir
 
-        corridorfilename = datapath + self.task + '_corridors.pkl'
-        input_file = open(corridorfilename, 'rb')
-        if version_info.major == 2:
-            self.corridor_list = pickle.load(input_file)
-        elif version_info.major == 3:
-            self.corridor_list = pickle.load(input_file, encoding='latin1')
-        input_file.close()
+        self.imaging_logfile_path: pathlib.Path | None = imaging_logfile_path
+        self.trigger_voltage_path: pathlib.Path | None = trigger_voltage_path
+        self.action_log_file_path: pathlib.Path | None = action_log_file_path
+        self.trigger_log_file_path: pathlib.Path | None  = trigger_log_file_path
+        self.F_all_path: pathlib.Path | None  = F_all_path
+        self.spikes_all_path: pathlib.Path | None  = spikes_all_path
+        self.is_cell_path: pathlib.Path | None  = is_cell_path
+        self.data_log_file_path: pathlib.Path | None  = data_log_file_path
+
+        with open(self.parent_dir / (self.task + '_stages.json'), 'r') as stages_file:
+            self.stage_list = Stage_collection.from_json(json.load(stages_file))
+
+        with open(self.parent_dir / (self.task + '_corridors.json'), 'r') as corridors_file:
+            self.corridor_list = Corridor_list.from_json(json.load(corridors_file))
 
         self.all_corridors_raw = np.hstack([0, np.array(self.stage_list.stages[self.stage].corridors)])# we always add corridor 0 - that is the grey zone
         print('raw corridors', self.all_corridors_raw)
@@ -340,20 +352,18 @@ class ImShuffle:
         lick_array=[]
         action=[]
         substage=[]
-
-        data_log_file_string=datapath + 'data/' + name + '_' + task + '/' + date_time + '/' + date_time + '_' + name + '_' + task + '_ExpStateMashineLog.txt'
-        data_log_file=open(data_log_file_string, newline='')
-        log_file_reader=csv.reader(data_log_file, delimiter=',')
-        next(log_file_reader, None)#skip the headers
-        for line in log_file_reader:
-            time_array.append(float(line[0]))
-            lap_array.append(int(line[1]))
-            maze_array.append(int(line[2]))
-            position_array.append(int(line[3]))
-            mode_array.append(line[6] == 'Go')
-            lick_array.append(line[9] == 'TRUE')
-            action.append(str(line[14]))
-            substage.append(str(line[17]))
+        with open(self.data_log_file_path) as data_log_file:
+            log_file_reader=csv.reader(data_log_file, delimiter=',')
+            next(log_file_reader, None)#skip the headers
+            for line in log_file_reader:
+                time_array.append(float(line[0]))
+                lap_array.append(int(line[1]))
+                maze_array.append(int(line[2]))
+                position_array.append(int(line[3]))
+                mode_array.append(line[6] == 'Go')
+                lick_array.append(line[9] == 'TRUE')
+                action.append(str(line[14]))
+                substage.append(str(line[17]))
 
         laptime = np.array(time_array)
         lap = np.array(lap_array)

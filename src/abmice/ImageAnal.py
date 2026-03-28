@@ -5,12 +5,14 @@ Created on Tue Apr 27 18:14:19 2020
 luko.balazs - lukobalazs@gmail.com
 , 
 """
-
+import dataclasses
+from typing import Protocol, Any
 
 import numpy as np
 import json
 from matplotlib import pyplot as plt
 from matplotlib import colors as matcols
+from matplotlib.figure import Figure
 # from pathlib import Path # this only works with python > 3.4, not compatible with 2.7
 from scipy.interpolate import interp1d
 import scipy.stats
@@ -42,7 +44,25 @@ else:
     csv_kwargs = {'delimiter':' '}
 
 
-class ImagingSessionData:
+@dataclasses.dataclass
+class TuningParameters:
+    skaggs: list[list[int]]
+    ts: list[list[int]]
+    reli: list[list[int]]
+
+
+class SessionData(Protocol):
+    def get_total_cell_number(self) -> int: ...
+    def get_active_cell_number(self) -> int: ...
+    def get_active_cell_number_per_corridor(self) -> list[int]: ...
+    def get_tuned_cell_number(self) -> list[list[int]]: ...
+    def get_selective_cells(self) -> list[int]: ...
+    def get_tuning_parameters(self) -> TuningParameters: ...
+    def get_imaged_laps(self) -> list["Lap_ImData"]: ...
+    def plot_session(self, *args, **kwargs) -> Figure: ...
+    def plot_ratemaps(self, *args, **kwargs) -> Figure: ...
+
+class ImagingSessionData(SessionData):
     'Base structure for both imaging and behaviour data'
     def __init__(
             self,
@@ -299,6 +319,23 @@ class ImagingSessionData:
 
     def get_imaged_laps(self) -> list["Lap_ImData"]:
         return self.ImLaps
+
+    def get_total_cell_number(self) -> int:
+        return self.N_cells
+
+    def get_tuned_cell_number(self) -> list[list[int]]:
+        return self.tuned_cells
+
+    def get_tuning_parameters(self) -> TuningParameters:
+        return TuningParameters(
+            skaggs=self.skaggs_tuned_cells,
+            ts=self.spec_tuned_cells,
+            reli=self.reli_tuned_cells,
+        )
+
+    def get_selective_cells(self) -> list[int]:
+        return self.selective_cells.tolist()
+
 
     def get_analysis_ID(self, s2p_ids):
         # map suite2p ids to analysis ids - writes results to console and returns them
@@ -1560,7 +1597,35 @@ class ImagingSessionData:
         if (calculate_shuffles):
             if (verbous > 0):
                 print('calculating shuffles...')
-            shuffle_stats = ImShuffle(self.datapath, self.date_time, self.name, self.task, self.stage, raw_spikes, self.frame_times, self.frame_pos, self.frame_laps, N_shuffle=n, cellids=cellids, mode=mode, batchsize=batchsize, randseed=self.randseed, selected_laps=self.selected_laps, elfiz=self.elfiz, min_Nlaps=self.minimum_Nlaps, multiplane=self.multiplane)
+            shuffle_stats = ImShuffle(
+                self.datapath,
+                self.date_time,
+                self.name,
+                self.task,
+                self.stage,
+                raw_spikes,
+                self.frame_times,
+                self.frame_pos,
+                self.frame_laps,
+                N_shuffle=n,
+                cellids=cellids,
+                mode=mode,
+                batchsize=batchsize,
+                randseed=self.randseed,
+                selected_laps=self.selected_laps,
+                elfiz=self.elfiz,
+                min_Nlaps=self.minimum_Nlaps,
+                multiplane=self.multiplane,
+                parent_dir=self.parent_dir,
+                imaging_logfile_path=self.imaging_logfile_path,
+                trigger_voltage_path=self.trigger_voltage_path,
+                action_log_file_path=self.action_log_file_path,
+                trigger_log_file_path=self.trigger_log_file_path,
+                F_all_path=self.F_all_path,
+                spikes_all_path=self.spikes_all_path,
+                is_cell_path=self.is_cell_path,
+                data_log_file_path=self.data_log_file_path,
+            )
             # shuffle_stats = ImShuffle(D1.datapath,   D1.date_time,   D1.name,   D1.task,   D1.stage,   raw_spikes, D1.frame_times,   D1.frame_pos,   D1.frame_laps,   N_shuffle=N_shuffle, cellids=cellids, mode='shift', batchsize=25,        randseed=D1.randseed, selected_laps=np.arange(20,80), elfiz=True)
 
             # NN = cellids.size
