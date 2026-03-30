@@ -317,6 +317,13 @@ class ImagingSessionData(SessionData):
 
         self.test_anticipatory()
 
+    def get_active_cell_number(self) -> int:
+        return self.active_cells.shape[0]
+
+    def get_active_cell_number_per_corridor(self) -> list[int]:
+        # todo: to be implemented
+        return []
+
     def get_imaged_laps(self) -> list["Lap_ImData"]:
         return self.ImLaps
 
@@ -328,9 +335,9 @@ class ImagingSessionData(SessionData):
 
     def get_tuning_parameters(self) -> TuningParameters:
         return TuningParameters(
-            skaggs=self.skaggs_tuned_cells,
-            ts=self.spec_tuned_cells,
-            reli=self.reli_tuned_cells,
+            skaggs=[el.tolist() for el in self.skaggs_tuned_cells],
+            ts=[el.tolist() for el in self.spec_tuned_cells],
+            reli=[el.tolist() for el in self.reli_tuned_cells],
         )
 
     def get_selective_cells(self) -> list[int]:
