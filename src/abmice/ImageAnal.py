@@ -61,6 +61,7 @@ class SessionData(Protocol):
     def get_imaged_laps(self) -> list["Lap_ImData"]: ...
     def plot_session(self, *args, **kwargs) -> Figure: ...
     def plot_ratemaps(self, *args, **kwargs) -> Figure: ...
+    def plot_cell_laps(self, *args, **kwargs) -> Figure: ...
 
 class ImagingSessionData(SessionData):
     'Base structure for both imaging and behaviour data'
@@ -2041,7 +2042,7 @@ class ImagingSessionData(SessionData):
         return(cell_info)
 
 
-    def plot_cell_laps(self, cellid, multipdf_object=-1, signal='dF', corridor=-1, reward=True, write_pdf=False, plot_laps='all', n_grey_bins=100):
+    def plot_cell_laps(self, cellid, multipdf_object=-1, signal='dF', corridor: int | None = None, reward=True, write_pdf=False, plot_laps='all', n_grey_bins=100, show=True):
         ## plot the activity of a single cell in all trials in a given corridor
         ## signal can be 
         ##          'dF' when dF/F and spikes are plotted as a function of time
@@ -2049,11 +2050,11 @@ class ImagingSessionData(SessionData):
         ## plot_laps can be either 'all', 'correct' or 'error'
 
         #process input corridors
-        if (corridor == -1):
-            corridor = self.corridors
+        if not corridor:
+            corridor: np.array[int] = self.corridors
         else:
             if corridor in self.corridors:
-                corridor=np.array([corridor])
+                corridor: np.array[int] = np.array([corridor])
             else:
                 print('Warning: specified corridor does not exist in this session!')
                 return
@@ -2102,7 +2103,7 @@ class ImagingSessionData(SessionData):
                     events = 50 * events / max_range
                     ii_events = np.nonzero(events)[0]
                     ax[0,cor_index].scatter(times[i][ii_events], np.ones(len(ii_events)) * i, s=events[ii_events], cmap=colmap, c=(np.ones(len(ii_events)) * np.remainder(10*i, 255)), norm=colnorm)
-                    if (reward == True): 
+                    if (reward == True):
                         ax[0,cor_index].scatter(reward_times[i], np.repeat(i, len(reward_times[i])), marker="s", s=50, edgecolors=colmap(np.remainder(10*i, 255)), facecolors='none')
     
                 ylab_string = 'dF_F, spikes (max: ' + str(np.round(max_range, 1)) +  ' )'
@@ -2171,7 +2172,7 @@ class ImagingSessionData(SessionData):
                 correct_reward = np.zeros([2, len(i_laps_beh)])
                 ii = 0
                 for i_lap in i_laps_beh:
-                    if (self.ImLaps[i_lap].correct == True):
+                    if self.ImLaps[i_lap].correct == True:
                         correct_reward[0,ii] = 1
                     if (len(self.ImLaps[i_lap].reward_times) > 0):
                         correct_reward[1,ii] = 1
@@ -2186,10 +2187,10 @@ class ImagingSessionData(SessionData):
                 total_time = self.activity_tensor_time[:,i_laps]
                 rate_matrix = nan_divide(total_spikes, total_time, where=total_time > 0.025)
 
-                if (plot_laps == 'correct'):
+                if plot_laps == 'correct':
                     i_error = np.nonzero(correct_reward[0,:] == 0)[0]
                     rate_matrix[:,i_error] = np.nan
-                if (plot_laps == 'error'):
+                if plot_laps == 'error':
                     i_correct = np.nonzero(correct_reward[0,:] == 1)[0]
                     rate_matrix[:,i_correct] = np.nan
 
@@ -2203,13 +2204,10 @@ class ImagingSessionData(SessionData):
                 ax[0,cor_index].set_title(title_string)
                 ax[1,cor_index].fill_between(errorbar_x,average_firing_rate+std, average_firing_rate-std, alpha=0.3)
                 ax[1,cor_index].plot(average_firing_rate,zorder=0)
-                n_laps = rate_matrix.shape[1]
 
-                if corridor.size>1:
-                    im1 = ax[0,cor_index].imshow(np.transpose(rate_matrix), aspect='auto', origin='lower',vmin=min_intensity, vmax=max_intensity, cmap=mymap)
-                else:
-                    im1 = ax[0,cor_index].imshow(np.transpose(rate_matrix), aspect='auto', origin='lower',vmin=min_intensity, vmax=max_intensity, cmap=mymap)
-                if (reward == True):
+                im1 = ax[0,cor_index].imshow(np.transpose(rate_matrix), aspect='auto', origin='lower',vmin=min_intensity, vmax=max_intensity, cmap=mymap)
+
+                if reward:
                     i_cor = np.nonzero(correct_reward[0,:])[0]
                     n_cor = len(i_cor)
                     ax[0, cor_index].scatter(np.ones(n_cor)*nbins, i_cor, marker="_", color='C0')
@@ -2225,7 +2223,7 @@ class ImagingSessionData(SessionData):
             ## add reward zones - rewardZones
             for cor_index in range(corridor.size):
                 zone_starts = self.corridor_list.corridors[corridor[cor_index]].reward_zone_starts
-                if (len(zone_starts) > 0):
+                if len(zone_starts) > 0:
                     zone_ends = self.corridor_list.corridors[corridor[cor_index]].reward_zone_ends
                     bottom, top = ax[0,cor_index].get_ylim()
                     for i_zone in range(len(zone_starts)):
@@ -2240,9 +2238,13 @@ class ImagingSessionData(SessionData):
                 plt.savefig(multipdf_object, format='pdf')
 
             fig.tight_layout()
-            plt.show(block=False)
+
+            if show:
+                plt.show(block=False)
+            else:
+                return fig
             
-            if write_pdf==True:
+            if write_pdf:
                 plt.close()
             
     
