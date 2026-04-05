@@ -718,8 +718,8 @@ class ImagingSessionData(SessionData):
             n_events[i]=np.size(np.nonzero(valid==1)[0])
         #return
         self.active_cells = np.nonzero(n_events>active_threshold)[0]
-        self.N_events = np.array(n_events)
-        
+        self.N_events = np.array(n_events, dtype=int)
+
     def detect_events(self,sd_times = 3):\
         # detecting significant events in the fluorescence signal
         # an event is significant, if the Gaussian filtered (SD = 3 x Interframe interval ) dF/F 
@@ -3354,8 +3354,8 @@ class Lap_ImData:
             if (verbous > 0):
                 print('Zone-Rates calculated')
 
-    def get_max_velocity(self):
-        return self.frames_speed.max()
+    def get_velocity_90th_percentile(self):
+        return np.percentile(self.frames_speed, 90)
 
     def plot_tx(self, fluo=False, th=25):
         ## fluo: True or Fasle, whether fluoresnece data should be plotted.
