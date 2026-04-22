@@ -52,6 +52,20 @@ class TuningParameters:
     ts: list[list[int]]
     reli: list[list[int]]
 
+    @property
+    def dataframe(self) -> pd.DataFrame:
+        params: list[list[int]] = self.skaggs + self.ts + self.reli
+        cell_ids: list[int] = sorted(list({cell_id for column in params for cell_id in column }))
+        df = pd.DataFrame(cell_ids, columns=['cell_id'])
+
+        for tuning_parameter in ['skaggs', 'ts', 'reli']:
+            for index, column in enumerate(getattr(self, tuning_parameter, [])):
+                series = pd.Series([cell_id in column for cell_id in cell_ids], name=f"{tuning_parameter} column_{index}", dtype=bool)
+                df = pd.concat([df, series], axis=1)
+
+        return df
+
+
 @dataclasses.dataclass
 class ShuffleParameters:
     name: str
