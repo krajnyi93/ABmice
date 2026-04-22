@@ -457,9 +457,6 @@ class ImagingSessionData(SessionData):
             shuffle_df=df
         )
 
-
-
-
     def check_params(self, filename, shuffle_file_path: pathlib.Path | None = None) -> bool:
         # read the parameters from the file and compare it to the current ImagingSessionData 
         if shuffle_file_path:
