@@ -10,6 +10,8 @@ from typing import Protocol, Any
 
 import numpy as np
 import json
+
+import pandas
 from matplotlib import pyplot as plt
 from matplotlib import colors as matcols
 from matplotlib.figure import Figure
@@ -50,15 +52,38 @@ class TuningParameters:
     ts: list[list[int]]
     reli: list[list[int]]
 
+@dataclasses.dataclass
+class ShuffleParameters:
+    name: str
+    task: str
+    # date_time: datetime
+    datapath: str
+    suite2p_folder: str
+    stage: int
+    randseed: int
+    # selected_laps: list[int] | None
+    speed_threshold: float
+
+    n: int
+    mode: str
+
+    shuffle_df: pandas.DataFrame
+
+    @property
+    def cell_ids(self) -> list[int]:
+        return self.shuffle_df['cellids'].values.astype(np.int32).tolist()
+
 
 class SessionData(Protocol):
     def get_total_cell_number(self) -> int: ...
+    def get_active_cells(self) -> list[int]: ...
     def get_active_cell_number(self) -> int: ...
     def get_active_cell_number_per_corridor(self) -> list[int]: ...
     def get_tuned_cell_number(self) -> list[list[int]]: ...
     def get_selective_cells(self) -> list[int]: ...
     def get_tuning_parameters(self) -> TuningParameters: ...
     def get_imaged_laps(self) -> list["Lap_ImData"]: ...
+    def get_shuffle_params(self, shuffle_file_path: pathlib.Path) -> dict: ...
     def plot_session(self, *args, **kwargs) -> Figure: ...
     def plot_lap_by_lap(self, *args, **kwargs) -> Figure: ...
     def plot_ratemaps(self, *args, **kwargs) -> Figure: ...
@@ -319,6 +344,9 @@ class ImagingSessionData(SessionData):
 
         self.test_anticipatory()
 
+    def get_active_cells(self) -> list[int]:
+        return self.active_cells.tolist()
+
     def get_active_cell_number(self) -> int:
         return self.active_cells.shape[0]
 
@@ -395,8 +423,48 @@ class ImagingSessionData(SessionData):
 
         print('Session parameters written into file: ', filename)
 
-    def check_params(self, filename):
+    def get_shuffle_params(self, shuffle_file_path: pathlib.Path) -> ShuffleParameters:
+        # read the parameters from the file and compare it to the current ImagingSessionData
+
+        n = int(shuffle_file_path.name.split("_")[2][1:])
+        mode = shuffle_file_path.name.split("_")[4].split('.')[0]
+
+        with open(shuffle_file_path, newline='') as shuffle_file:
+            file = csv.reader(shuffle_file, delimiter=' ')
+            name = next(file)[1]
+            task = next(file)[1]
+            date_time = next(file)[1]
+            datapath = next(file)[1]
+            suite2p_folder = next(file)[1]
+            stage = next(file)[1]
+            randseed = next(file)[1]
+            selected_laps = next(file)[1]
+            speed_threshold = next(file)[1]
+            df = pandas.read_csv(shuffle_file, delimiter=' ')
+
+        return ShuffleParameters(
+            name=name,
+            task=task,
+            # date_time=date_time,
+            datapath=datapath,
+            suite2p_folder=suite2p_folder,
+            stage=int(stage),
+            randseed=int(randseed),
+            # selected_laps=selected_laps,
+            speed_threshold=float(speed_threshold),
+            n=n,
+            mode=mode,
+            shuffle_df=df
+        )
+
+
+
+
+    def check_params(self, filename, shuffle_file_path: pathlib.Path | None = None) -> bool:
         # read the parameters from the file and compare it to the current ImagingSessionData 
+        if shuffle_file_path:
+            return True
+
         data_folder = self.suite2p_folder + self.data_folder
         if not os.path.exists(data_folder):
             print ('Error: data directory', data_folder, 'does NOT exist!')    
@@ -1532,9 +1600,8 @@ class ImagingSessionData(SessionData):
 
             self.candidate_PCs.append(candidate_cells)
 
-    # def __init__(self, datapath, date_time, name, task, stage, raw_spikes, frame_times, frame_pos, frame_laps, N_shuffle=1000, mode='random'):
     # todo: dependency injection pattern
-    def calc_shuffle(self, cellids, n=1000, mode='shift', batchsize=25, verbous=1, name_string=''):
+    def calc_shuffle(self, cellids, n=1000, mode='shift', batchsize=25, verbous=1, name_string='', shuffle_file_path: pathlib.Path | None = None):
         ## cellids: numpy array - the index of the cells to be included in the analysis
         ## n: integer, number of shuffles
         ## mode: 'random' or 'shift'. 
@@ -1552,12 +1619,12 @@ class ImagingSessionData(SessionData):
         ## reading shuffling data from file
         ##########################################################################
 
-        data_folder = self.suite2p_folder + self.data_folder
+        data_folder = self.suite2p_folder  + '/'  + self.data_folder
         shuffle_filename = 'shuffle_stats_' + name_string + 'n' + str(n) + '_mode_' + mode + '.csv'
-        shuffle_path = data_folder + '/' + shuffle_filename
+        shuffle_path = shuffle_file_path or data_folder + '/' + shuffle_filename
         if os.path.exists(shuffle_path):
             calculate_shuffles = False
-            if (self.check_params(shuffle_filename)):
+            if self.check_params(shuffle_filename, shuffle_file_path=shuffle_path):
                 if (verbous > 1):
                     print('loading shuffling P-values from file...')
                 ## load from file
