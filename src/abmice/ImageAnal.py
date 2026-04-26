@@ -51,6 +51,7 @@ class TuningParameters:
     skaggs: list[list[int]]
     ts: list[list[int]]
     reli: list[list[int]]
+    selective: list[int]
 
     @property
     def dataframe(self) -> pd.DataFrame:
@@ -382,6 +383,7 @@ class ImagingSessionData(SessionData):
             skaggs=[el.tolist() for el in self.skaggs_tuned_cells],
             ts=[el.tolist() for el in self.spec_tuned_cells],
             reli=[el.tolist() for el in self.reli_tuned_cells],
+            selectivity=[selective_cells.tolist() for el in self.selective_cells],
         )
 
     def get_selective_cells(self) -> list[int]:
