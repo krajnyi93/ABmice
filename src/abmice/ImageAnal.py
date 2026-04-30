@@ -51,7 +51,7 @@ class TuningParameters:
     skaggs: list[list[int]]
     ts: list[list[int]]
     reli: list[list[int]]
-    selective: list[int]
+    # selective: list[int]
 
     @property
     def dataframe(self) -> pd.DataFrame:
@@ -61,7 +61,7 @@ class TuningParameters:
 
         for tuning_parameter in ['skaggs', 'ts', 'reli']:
             for index, column in enumerate(getattr(self, tuning_parameter, [])):
-                series = pd.Series([cell_id in column for cell_id in cell_ids], name=f"{tuning_parameter} column_{index}", dtype=bool)
+                series = pd.Series([cell_id in column for cell_id in cell_ids], name=f"{tuning_parameter}_column_{index}", dtype=bool)
                 df = pd.concat([df, series], axis=1)
 
         return df
@@ -383,7 +383,7 @@ class ImagingSessionData(SessionData):
             skaggs=[el.tolist() for el in self.skaggs_tuned_cells],
             ts=[el.tolist() for el in self.spec_tuned_cells],
             reli=[el.tolist() for el in self.reli_tuned_cells],
-            selectivity=[selective_cells.tolist() for el in self.selective_cells],
+            # selectivity=[selective_cells.tolist() for el in self.selective_cells],
         )
 
     def get_selective_cells(self) -> list[int]:
@@ -2990,16 +2990,16 @@ class ImagingSessionData(SessionData):
             
             print('previous-based ratemaps calculated - !Previous overwritten!')
 
-    def show_crosscorr(self, ratemap1, ratemap2, cellids=None, ratemap1_annot='map 1', ratemap2_annot='map 2', main_title='Cross correlation', return_matrix=False, plot_ccm=True):
+    def show_crosscorr(self, ratemap1, ratemap2, cellids=None, ratemap1_annot='map 1', ratemap2_annot='map 2', main_title='Cross correlation', return_matrix=False, plot_ccm=True, show=True):
         #plot cross-correlation matrix between two ratemaps, only for specified cellids
         if (cellids is None):
             cellids = np.arange(self.N_cells)
 
         popp_full = np.corrcoef(ratemap1[:,cellids], ratemap2[:,cellids])
         popp = popp_full[:self.N_pos_bins, self.N_pos_bins:]
-        
-        if (plot_ccm == True):
-            fig, ax = plt.subplots()
+
+        fig, ax = plt.subplots()
+        if plot_ccm:
             im = ax.imshow(popp, cmap = 'seismic', vmin = -1, vmax = 1, origin='lower')
             ax.plot(ax.get_xlim(), ax.get_ylim(), ls="--", linewidth = '0.5', c='k')
             
@@ -3007,14 +3007,17 @@ class ImagingSessionData(SessionData):
             plt.ylabel(ratemap1_annot)
             plt.xlabel(ratemap2_annot)
             plt.title(main_title)
+        if show:
             plt.show()
+        else:
+            return fig
 
         if (return_matrix == True):
             return popp_full
         else :
             return
         
-    def show_autocorr(self, ratemap, cellids=None, title='autocorrelation'):
+    def show_autocorr(self, ratemap, cellids=None, title='autocorrelation', show=True):
         #show autucorrelation matrix for a given ratemap, cellids
         if (cellids is None):
             cellids = np.arange(self.N_cells)
@@ -3027,7 +3030,10 @@ class ImagingSessionData(SessionData):
 
         plt.colorbar(im)
         plt.title(title)
-        plt.show()
+        if show:
+            plt.show()
+        else:
+            return fig
         
     def lap_decode(self, cellids, ratemaps=None, labels=None, title=''):
         ## D1.lap_decode(cellids, D1.ratemaps, D1.corridors, '')
