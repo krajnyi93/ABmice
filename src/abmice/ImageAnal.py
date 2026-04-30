@@ -2998,8 +2998,8 @@ class ImagingSessionData(SessionData):
         popp_full = np.corrcoef(ratemap1[:,cellids], ratemap2[:,cellids])
         popp = popp_full[:self.N_pos_bins, self.N_pos_bins:]
 
-        fig, ax = plt.subplots()
         if plot_ccm:
+            fig, ax = plt.subplots()
             im = ax.imshow(popp, cmap = 'seismic', vmin = -1, vmax = 1, origin='lower')
             ax.plot(ax.get_xlim(), ax.get_ylim(), ls="--", linewidth = '0.5', c='k')
             
@@ -3007,10 +3007,10 @@ class ImagingSessionData(SessionData):
             plt.ylabel(ratemap1_annot)
             plt.xlabel(ratemap2_annot)
             plt.title(main_title)
-        if show:
-            plt.show()
-        else:
-            return fig
+            if show:
+                plt.show()
+            else:
+                return fig
 
         if (return_matrix == True):
             return popp_full
