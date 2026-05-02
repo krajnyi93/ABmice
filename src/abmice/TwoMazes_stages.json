@@ -1,0 +1,216 @@
+{
+    "image_path": "./",
+    "num_stages": 10,
+    "name": "TwoMazes",
+    "stages": [
+        {
+            "level": "pretrain",
+            "stage": 0,
+            "corridors": [
+                0
+            ],
+            "next_stage": [
+                1
+            ],
+            "rule": "lick&run",
+            "condition": "either",
+            "name": "pretrain",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                0
+            ]
+        },
+        {
+            "level": "lick_zone",
+            "stage": 1,
+            "corridors": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+            ],
+            "next_stage": [
+                2,
+                3,
+                4,
+                5
+            ],
+            "rule": "Pavlovian",
+            "condition": "either",
+            "name": "9 -> 1 lick zone",
+            "random": "pseudo",
+            "N_corridors": 11,
+            "substages": [
+                0,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                3,
+                3,
+                3,
+                4
+            ]
+        },
+        {
+            "level": "1 maze",
+            "stage": 6,
+            "corridors": [
+                12
+            ],
+            "next_stage": [
+                7
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "green square",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                0
+            ]
+        },
+        {
+            "level": "1 maze",
+            "stage": 7,
+            "corridors": [
+                13
+            ],
+            "next_stage": [
+                11
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "green square NEAR",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                0
+            ]
+        },
+        {
+            "level": "1 maze",
+            "stage": 8,
+            "corridors": [
+                14
+            ],
+            "next_stage": [
+                9
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "purple striped",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                0
+            ]
+        },
+        {
+            "level": "1 maze",
+            "stage": 9,
+            "corridors": [
+                15
+            ],
+            "next_stage": [
+                12
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "purple striped NEAR",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                0
+            ]
+        },
+        {
+            "level": "1 maze",
+            "stage": 10,
+            "corridors": [
+                16
+            ],
+            "next_stage": [
+                13
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "purple square",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                0
+            ]
+        },
+        {
+            "level": "2 maze",
+            "stage": 11,
+            "corridors": [
+                12,
+                13
+            ],
+            "next_stage": [
+                8
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "green_Q",
+            "random": "pseudo",
+            "N_corridors": 2,
+            "substages": [
+                0,
+                0
+            ]
+        },
+        {
+            "level": "2 maze",
+            "stage": 12,
+            "corridors": [
+                14,
+                15
+            ],
+            "next_stage": [
+                10
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "purple_S",
+            "random": "pseudo",
+            "N_corridors": 2,
+            "substages": [
+                0,
+                0
+            ]
+        },
+        {
+            "level": "2 maze",
+            "stage": 13,
+            "corridors": [
+                12,
+                16
+            ],
+            "next_stage": [
+                11
+            ],
+            "rule": "correct",
+            "condition": "correct",
+            "name": "square",
+            "random": "pseudo",
+            "N_corridors": 2,
+            "substages": [
+                0,
+                0
+            ]
+        }
+    ]
+}

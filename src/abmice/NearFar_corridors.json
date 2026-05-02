@@ -1,0 +1,155 @@
+{
+    "image_path": "./",
+    "num_VRs": 8,
+    "name": "NearFar",
+    "corridors": [
+        {
+            "name": "grey",
+            "left_image": "grey_wall.png",
+            "right_image": "grey_wall.png",
+            "end_image": "grey_end_wall.png",
+            "floor_image": "grey_floor_ceiling.png",
+            "ceiling_image": "grey_floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "None",
+            "N_zones": 0,
+            "reward_zone_starts": []
+        },
+        {
+            "name": "all_sine",
+            "left_image": "mABd0LeftRightcorridor.png",
+            "right_image": "mABd0LeftRightcorridor.png",
+            "end_image": "mAEnd.png",
+            "floor_image": "mAFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 12,
+            "reward_zone_starts": [
+                0,
+                500,
+                1000,
+                1500,
+                2000,
+                2500,
+                3000,
+                3500,
+                4000,
+                4500,
+                5000,
+                5500
+            ]
+        },
+        {
+            "name": "all_square",
+            "left_image": "mABd0LeftRightcorridor.png",
+            "right_image": "mABd0LeftRightcorridor.png",
+            "end_image": "mBEnd.png",
+            "floor_image": "mBFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 12,
+            "reward_zone_starts": [
+                0,
+                500,
+                1000,
+                1500,
+                2000,
+                2500,
+                3000,
+                3500,
+                4000,
+                4500,
+                5000,
+                5500
+            ]
+        },
+        {
+            "name": "sine",
+            "left_image": "mAd1Leftcorridor.png",
+            "right_image": "mAd1Rightcorridor.png",
+            "end_image": "mAEnd.png",
+            "floor_image": "mAFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 1,
+            "reward_zone_starts": [
+                2382
+            ]
+        },
+        {
+            "name": "square",
+            "left_image": "mBd1Leftcorridor.png",
+            "right_image": "mBd1Rightcorridor.png",
+            "end_image": "mBEnd.png",
+            "floor_image": "mBFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 1,
+            "reward_zone_starts": [
+                4769
+            ]
+        },
+        {
+            "name": "sine2",
+            "left_image": "mAd1Leftcorridor.png",
+            "right_image": "mAd1Rightcorridor.png",
+            "end_image": "mAEnd.png",
+            "floor_image": "mAFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 1,
+            "reward_zone_starts": [
+                2382
+            ]
+        },
+        {
+            "name": "square2",
+            "left_image": "mBd1Leftcorridor.png",
+            "right_image": "mBd1Rightcorridor.png",
+            "end_image": "mBEnd.png",
+            "floor_image": "mBFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 1,
+            "reward_zone_starts": [
+                4769
+            ]
+        },
+        {
+            "name": "star",
+            "left_image": "mCd1Leftcorridor.png",
+            "right_image": "mCd1Rightcorridor.png",
+            "end_image": "mCEnd.png",
+            "floor_image": "mCFloor.png",
+            "ceiling_image": "floor_ceiling.png",
+            "length": 7168,
+            "height": 768,
+            "width": 1024,
+            "reward": "Right",
+            "N_zones": 1,
+            "reward_zone_starts": [
+                3560
+            ]
+        }
+    ]
+}

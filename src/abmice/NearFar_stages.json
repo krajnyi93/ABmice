@@ -1,0 +1,71 @@
+{
+    "image_path": "./",
+    "num_stages": 3,
+    "name": "NearFar",
+    "stages": [
+        {
+            "level": "pretrain",
+            "stage": 0,
+            "corridors": [
+                0
+            ],
+            "next_stage": [
+                1
+            ],
+            "rule": "lick&run",
+            "condition": "either",
+            "name": "pretrain",
+            "random": "pseudo",
+            "N_corridors": 1,
+            "substages": [
+                "a"
+            ]
+        },
+        {
+            "level": "diff_1",
+            "stage": 1,
+            "corridors": [
+                1,
+                2
+            ],
+            "next_stage": [
+                2
+            ],
+            "rule": "Pavlovian",
+            "condition": "either",
+            "name": "all_reward",
+            "random": "pseudo",
+            "N_corridors": 2,
+            "substages": [
+                "a",
+                "a"
+            ]
+        },
+        {
+            "level": "diff_2",
+            "stage": 2,
+            "corridors": [
+                3,
+                4,
+                5,
+                6,
+                7
+            ],
+            "next_stage": [
+                2
+            ],
+            "rule": "Pavlovian",
+            "condition": "both",
+            "name": "1_zone",
+            "random": "pseudo",
+            "N_corridors": 5,
+            "substages": [
+                0,
+                0,
+                1,
+                1,
+                1
+            ]
+        }
+    ]
+}

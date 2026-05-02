@@ -9,6 +9,7 @@ We define a class - Corridor - and the collector class.
 
 import numpy as np
 import io
+import json
 import pickle
 
 class Corridor:
@@ -77,11 +78,36 @@ class Corridor_list:
 		for i in range(self.num_VRs):
 			self.corridors[i].print_zones()
 
+	def to_json(self) -> dict:
+		corridors = []
+		for c in self.corridors:
+			section_length = float(c.length - c.width)
+			raw_starts = (c.reward_zone_starts * section_length).round().astype(int).tolist() if c.N_zones > 0 else []
+			corridors.append({
+				'name': c.name,
+				'left_image': c.left_image,
+				'right_image': c.right_image,
+				'end_image': c.end_image,
+				'floor_image': c.floor_image,
+				'ceiling_image': c.ceiling_image,
+				'length': c.length,
+				'height': c.height,
+				'width': c.width,
+				'reward': c.reward,
+				'N_zones': c.N_zones,
+				'reward_zone_starts': raw_starts,
+			})
+		return {'image_path': self.image_path, 'num_VRs': self.num_VRs, 'name': self.name, 'corridors': corridors}
+
 	def write(self):
+		fname = self.image_path + '/' + self.name + '_corridors.json'
+		with open(fname, 'w') as f:
+			json.dump(self.to_json(), f, indent=4)
+
+	def write_pkl(self):
 		fname = self.image_path + '/' + self.name + '_corridors.pkl'
-		f = open(fname, 'wb')
-		pickle.dump(self, f)
-		f.close()
+		with open(fname, 'wb') as f:
+			pickle.dump(self, f)
 
 	@staticmethod
 	def from_json(file: io.TextIOWrapper) -> 'Corridor_list':

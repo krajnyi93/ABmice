@@ -11,6 +11,7 @@ import numpy as np
 from string import *
 from sys import version_info
 import io
+import json
 import pickle
 
 class Stage:
@@ -53,11 +54,32 @@ class Stage_collection:
 		for i in range(self.num_stages):
 			self.stages[i].print_props()
 
+	def to_json(self) -> dict:
+		stages = []
+		for s in self.stages:
+			stages.append({
+				'level': s.level,
+				'stage': s.stage,
+				'corridors': list(s.corridors),
+				'next_stage': list(s.next_stage),
+				'rule': s.rule,
+				'condition': s.condition,
+				'name': s.name,
+				'random': s.random,
+				'N_corridors': s.N_corridors,
+				'substages': list(s.substages),
+			})
+		return {'image_path': self.image_path, 'num_stages': self.num_stages, 'name': self.name, 'stages': stages}
+
 	def write(self):
+		fname = self.image_path + '/' + self.name + '_stages.json'
+		with open(fname, 'w') as f:
+			json.dump(self.to_json(), f, indent=4)
+
+	def write_pkl(self):
 		fname = self.image_path + '/' + self.name + '_stages.pkl'
-		f = open(fname, 'wb')
-		pickle.dump(self, f)
-		f.close()
+		with open(fname, 'wb') as f:
+			pickle.dump(self, f)
 
 	@staticmethod
 	def from_json(file: io.TextIOWrapper) -> 'StageCollection':
