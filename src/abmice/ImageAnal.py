@@ -6,6 +6,7 @@ luko.balazs - lukobalazs@gmail.com
 , 
 """
 import dataclasses
+import typing
 from typing import Protocol, Any
 
 import numpy as np
@@ -61,10 +62,68 @@ class TuningParameters:
 
         for tuning_parameter in ['skaggs', 'ts', 'reli']:
             for index, column in enumerate(getattr(self, tuning_parameter, [])):
-                series = pd.Series([cell_id in column for cell_id in cell_ids], name=f"{tuning_parameter}_column_{index}", dtype=bool)
+                series = pd.Series([cell_id in column for cell_id in cell_ids], name=f"{tuning_parameter}_corridor_{index}", dtype=bool)
                 df = pd.concat([df, series], axis=1)
 
         return df
+
+
+TUNING_PARAMETER_NAMES: list[str] = [field.name for field in dataclasses.fields(TuningParameters)]
+TUNING_PARAMETER_NAME = typing.Literal[*TUNING_PARAMETER_NAMES]
+
+
+@dataclasses.dataclass
+class TuningParameterRatios:
+    # tuning parameter cell_ids / imagining session . N_cell
+    # tuning parameter cell_ids / imagining session . active_cells
+    # all tuning parameter for each per_corridor / imagining session . N_cell
+    # all tuning parameter for each per_corridor / imagining session . active_cells
+    # for each tuning parameter for each per_corridor -> unique cell_ids / imagining session . N_cell
+    # for each tuning parameter for each per_corridor -> unique cell_ids / imagining session . active_cells
+
+    tuning_parameters: TuningParameters
+    all_cell_number: int
+    active_cell_number: int
+
+    def _tuned_cell_number(self) -> int:
+        tuning_params_ids = [tuning_param_ids for tuning_param_ids in dataclasses.asdict(self.tuning_parameters).values()]
+        return len(set(
+            _id for tuning_params_id in tuning_params_ids for tuning_params_id_per_corridor in tuning_params_id for _id in tuning_params_id_per_corridor
+        ))
+
+    def _tuned_cell_number_by_tuning_parameter(self, tuning_parameter_name: TUNING_PARAMETER_NAME) -> int:
+        if not tuning_parameter_name in self.tuning_parameters:
+            raise ValueError()
+        tuning_params_ids = [tuning_param_ids for tuning_param_ids in self.tuning_parameters[tuning_parameter_name]]
+        return len(set(
+            _id for tuning_params_id in tuning_params_ids for tuning_params_id_per_corridor in tuning_params_id for _id in tuning_params_id_per_corridor
+        ))
+
+    def _tuned_cell_number_by_tuning_parameter_corridor_index(self, tuning_parameter_name: TUNING_PARAMETER_NAME, corridor_index: int) -> int:
+        if not tuning_parameter_name in self.tuning_parameters:
+            raise ValueError()
+        tuning_parameter = self.tuning_parameters[tuning_parameter_name]
+        if corridor_index >= len(tuning_parameter):
+            raise ValueError()
+        return len(tuning_parameter[corridor_index])
+
+    def tuned_cell_number_per_all_cell_number(self) -> float:
+        return self._tuned_cell_number() / self.all_cell_number
+
+    def tuned_cell_number_per_active_cell_number(self) -> float:
+        return self._tuned_cell_number() / self.active_cell_number
+
+    def tuning_parameter_cell_number_per_all_cell_number(self, tuning_parameter: TUNING_PARAMETER_NAME) -> float:
+        return self._tuned_cell_number_by_tuning_parameter(tuning_parameter) / self.all_cell_number
+
+    def tuning_parameter_cell_number_per_active_cell_number(self, tuning_parameter: TUNING_PARAMETER_NAME) -> float:
+        return self._tuned_cell_number_by_tuning_parameter(tuning_parameter) / self.active_cell_number
+
+    def tuning_parameter_corridor_cell_number_per_all_cell_number(self, tuning_parameter: TUNING_PARAMETER_NAME, corridor_index: int) -> float:
+        return self._tuned_cell_number_by_tuning_parameter_corridor_index(tuning_parameter, corridor_index) / self.all_cell_number
+
+    def tuning_parameter_corridor_cell_number_per_active_cell_number(self, tuning_parameter: TUNING_PARAMETER_NAME, corridor_index: int) -> float:
+        return self._tuned_cell_number_by_tuning_parameter_corridor_index(tuning_parameter, corridor_index) / self.active_cell_number
 
 
 @dataclasses.dataclass
@@ -97,6 +156,7 @@ class SessionData(Protocol):
     def get_tuned_cell_number(self) -> list[list[int]]: ...
     def get_selective_cells(self) -> list[int]: ...
     def get_tuning_parameters(self) -> TuningParameters: ...
+    def get_tuning_parameter_ratios(self) -> TuningParameterRatios: ...
     def get_imaged_laps(self) -> list["Lap_ImData"]: ...
     def get_shuffle_params(self, shuffle_file_path: pathlib.Path) -> dict: ...
     def plot_session(self, *args, **kwargs) -> Figure: ...
@@ -384,6 +444,13 @@ class ImagingSessionData(SessionData):
             ts=[el.tolist() for el in self.spec_tuned_cells],
             reli=[el.tolist() for el in self.reli_tuned_cells],
             # selectivity=[selective_cells.tolist() for el in self.selective_cells],
+        )
+
+    def get_tuning_parameter_ratios(self) -> TuningParameterRatios:
+        return TuningParameterRatios(
+            tuning_parameters=self.get_tuning_parameters(),
+            all_cell_number=self.N_cells,
+            active_cell_number=len(self.active_cells),
         )
 
     def get_selective_cells(self) -> list[int]:
@@ -1906,8 +1973,16 @@ class ImagingSessionData(SessionData):
         ax[1,0].legend()
         plt.show(block=False)
 
-
-    def plot_ratemaps(self, corridor=-1, normalized=False, sorted=False, corridor_sort=-1, cellids=np.array([-1]), vmax=0, ratemaps_array = [], ratemaps_title = [], filename=None, show=True):
+    # option 1
+    # rate maps (cross-sorted) per corridor: corridor_sort (corridor_id), sorted True, normalized Ture
+    # option 2
+    # rate maps (cross-sorted) per corridor: corridor=[corridor_id: 14, corridor_id:14],
+    # corridor_sort=0 (index of ratemaps_array), ratemaps_array = [ratemaps_even[0], ratemaps_odd[0]], ratemaps_title = ['even_odd',]
+    def plot_ratemaps(
+            self,
+            corridor=-1, normalized=False, sorted=False, corridor_sort=-1,
+            cellids=np.array([-1]), vmax=0, ratemaps_array = [], ratemaps_title = [], filename=None, show=True
+    ):
         ## plot the average event rate of all cells in a given corridor
         ## corridor: integer or array... (corridor id)
         ##              INTEGER: if you want to plot default ratemaps
@@ -2010,7 +2085,7 @@ class ImagingSessionData(SessionData):
                             ratemap_to_sort = np.copy(ratemaps[0][:,cellids])
                             sort_title = sort_title + ' by ' + str(self.corridors[0])
                         else:
-                            sort_ratemap_index = int(np.nonzero(self.corridors==corridor_sort)[0])
+                            sort_ratemap_index =  self.corridors.tolist().index(corridor_sort)
                             ratemap_to_sort = np.copy(ratemaps[sort_ratemap_index][:,cellids])
                             sort_title = sort_title + ' by ' + str(self.corridors[sort_ratemap_index])
                       
@@ -2038,7 +2113,7 @@ class ImagingSessionData(SessionData):
                     print('Corridor', i , 'seems to be invalid - aborting')
                     return
                 else:
-                    i_corrid = int(np.nonzero(self.corridors==corridor[i])[0])
+                    i_corrid = self.corridors.tolist().index(corridor[i])
                     zone_starts.append(self.corridor_list.corridors[self.corridors[i_corrid]].reward_zone_starts)
                     zone_ends.append(self.corridor_list.corridors[self.corridors[i_corrid]].reward_zone_ends)
             else:
